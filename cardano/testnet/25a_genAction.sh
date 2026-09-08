@@ -182,7 +182,7 @@ if ${onlineMode}; then
 						#For CIP-179-linked anchors, retain the declared on-chain values so
 						#they can be checked against the live parameters and selected return
 						#address before an action file is created.
-						if jq -e '.body.cip179 != null' "${tmpAnchorContent}" >/dev/null 2>&1; then
+						if jq -e '.body.cip179 != null and .body.onChain != null' "${tmpAnchorContent}" >/dev/null 2>&1; then
 							cip179AnchorDeposit=$(jq -er '.body.onChain.deposit | strings | select(test("^[1-9][0-9]*$"))' "${tmpAnchorContent}" 2>/dev/null) || cip179AnchorDeposit=""
 							cip179AnchorRewardAccount=$(jq -er '.body.onChain.reward_account | strings | select(length > 0)' "${tmpAnchorContent}" 2>/dev/null) || cip179AnchorRewardAccount=""
 							if [[ "${cip179AnchorDeposit}" == "" || "${cip179AnchorRewardAccount}" == "" ]]; then

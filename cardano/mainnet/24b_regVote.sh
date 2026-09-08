@@ -226,6 +226,13 @@ for (( tmpCnt=2; tmpCnt<${paramCnt}; tmpCnt++ ))
 		voteHash=${voteActionVoter##*-}
 		echo -e "\e[0m       Voter-HASH: \e[94m${voteHash}\e[0m"
 
+		if [[ "${cip179ResponseFile}" != "" ]]; then
+			case ${voteType} in DRep) cip179Role=0;; Pool) cip179Role=1;; Committee) cip179Role=2;; *) exit 1;; esac
+			cip179SurveyTxId=$(jq -r '.cip179Survey.txId // empty' "${metafile}")
+			cip179SurveyIndex=$(jq -r '.cip179Survey.index // empty' "${metafile}")
+			node "${scriptDir}/cip179-vote.mjs" verify "${cip179ResponseFile}" "${cip179Role}" "${voteHash}" "${cip179SurveyTxId}" "${cip179SurveyIndex}" || exit 1
+		fi
+
 		#Get action-id
 		voteActionUTXO=${voteActionID:0:64}
 		voteActionIdx=${voteActionID:65}
@@ -299,7 +306,8 @@ if [[ ${#cip179ResponseFiles[@]} -gt 0 ]]; then
 	if [[ "${metadataJsonFile}" != "" ]]; then echo -e "\n\e[35mERROR - JSON metadata '${metadataJsonFile}' cannot be combined with CIP-179 response sidecars because they use different cardano-cli JSON schemas.\e[0m\n"; exit 1; fi
 	if [[ "${metadataCborFile}" != "" ]]; then echo -e "\n\e[35mERROR - CBOR metadata '${metadataCborFile}' cannot be safely checked for a label 17 collision with CIP-179 response sidecars.\e[0m\n"; exit 1; fi
 	if ! exists node || [[ ! -f "${scriptDir}/cip179-vote.mjs" ]]; then echo -e "\n\e[35mERROR - Node.js and '${scriptDir}/cip179-vote.mjs' are required to merge CIP-179 responses.\e[0m\n"; exit 1; fi
-	cip179MetadataFile="${tempDir}/cip179-responses.json"
+	cip179MetadataDir=$(mktemp -d "${tempDir}/cip179.XXXXXXXX") || exit 1
+	cip179MetadataFile="${cip179MetadataDir}/responses.json"
 	node "${scriptDir}/cip179-vote.mjs" merge "${cip179MetadataFile}" "${cip179ResponseFiles[@]}"
 	checkError "$?"; if [ $? -ne 0 ]; then exit $?; fi
 	metafileParameter="--json-metadata-detailed-schema --metadata-json-file ${cip179MetadataFile} "; metafileList+="'${cip179MetadataFile}' "

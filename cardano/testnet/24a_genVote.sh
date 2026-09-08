@@ -1187,7 +1187,7 @@ if [[ "${voteParam}" != "" ]]; then
 	cip179ResponseFile=""
 	if [[ "${cip179SurveyTxId}" != "" ]] && ask "\nThis action links a CIP-179 survey. Answer it with this governance vote?" N; then
 		if ! exists node || [[ ! -f "${scriptDir}/cip179-vote.mjs" ]]; then
-			echo -e "\n\e[35mCIP-179 survey voting needs cip179-vote.mjs, Node.js 20+, and cip-179@0.2.0.\nInstall the helper beside these scripts, then run 'npm install --no-save --no-package-lock cip-179@0.2.0' there.\e[0m\n"; exit 1
+			echo -e "\n\e[35mCIP-179 survey voting needs cip179-vote.mjs, Node.js 22.12+, and cip-179@0.2.0.\nInstall the helper beside these scripts, then run 'npm ci (in the checkout root)' there.\e[0m\n"; exit 1
 		fi
 		case ${voterType} in "DRep") cip179Role=0;; "Pool") cip179Role=1;; "Committee-Hot") cip179Role=2;; esac
 		cip179ResponseFile="${votingFile}.cip179.json"
@@ -1207,7 +1207,7 @@ if [[ "${voteParam}" != "" ]]; then
 	voteJSON=$(jq -r ". += { \"description\": \"${govActionTitle//[^[:alnum:][:space:]-_\/\!§$%&()?<>@|.,:;=*\']}\" }" <<< ${voteJSON} 2> /dev/null)
 	checkError "$?"; if [ $? -ne 0 ]; then echo -e "\e[35mERROR - ${voteJSON}\e[0m\n"; exit 1; fi
 	if [[ "${cip179ResponseFile}" != "" ]]; then
-		voteJSON=$(jq --arg responseFile "$(basename "${cip179ResponseFile}")" '.cip179Response = $responseFile' <<< "${voteJSON}")
+		voteJSON=$(jq --arg responseFile "$(basename "${cip179ResponseFile}")" --arg txId "${cip179SurveyTxId}" --arg index "${cip179SurveyIndex}" '.cip179Response = $responseFile | .cip179Survey = {txId: $txId, index: $index}' <<< "${voteJSON}")
 	fi
 	echo "${voteJSON}" > "${votingFile}"; checkError "$?"; if [ $? -ne 0 ]; then exit $?; fi
 
